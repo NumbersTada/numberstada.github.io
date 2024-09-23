@@ -7,6 +7,7 @@ function GameManager(size, InputManager, Actuator, StorageManager) {
   this.startTiles     = 2;
   this.xTiles         = 3;
   this.goal        = Math.max(Math.pow(2,14-this.xTiles),16);
+  this.movableX    = true;
 
   this.inputManager.on("move", this.move.bind(this));
   this.inputManager.on("restart", this.restart.bind(this));
@@ -49,7 +50,6 @@ GameManager.prototype.isGameTerminated = function () {
 // Set up the game
 GameManager.prototype.setup = function () {
   var previousState = this.storageManager.getGameState();
-
   // Reload the game from a previous game if present
   if (previousState) {
     this.grid        = new Grid(previousState.grid.size,
@@ -59,8 +59,10 @@ GameManager.prototype.setup = function () {
     this.won         = previousState.won;
     this.keepPlaying = previousState.keepPlaying;
     this.xTiles      = previousState.xTiles;
+    this.movableX    = previousState.movableX;
   } else {
     this.grid        = new Grid(this.size);
+    //this.movableX    = true;
     this.score       = 0;
     this.over        = false;
     this.won         = false;
@@ -69,9 +71,14 @@ GameManager.prototype.setup = function () {
     this.addStartTiles();
   }
   this.goal        = Math.max(Math.pow(2,14-this.xTiles),16);
-  document.getElementById("goal").innerHTML=this.goal+" tile!";
-  document.getElementById("title").innerHTML=this.goal+"X";
-
+  document.getElementById("goal").innerHTML = this.goal+" tile!";
+  document.getElementById("title").innerHTML = this.goal+"X";
+  document.getElementById("toggleCheckbox").checked = this.movableX
+  document.getElementById("toggleCheckbox").addEventListener("change", function(event) {
+    const before = this.movableX
+    this.movableX = event.target.checked;
+    if (before != event.target.checked) this.restart();
+  }.bind(this));
   // Update the actuator
   this.actuate();
 };
@@ -133,6 +140,7 @@ GameManager.prototype.serialize = function () {
     over:        this.over,
     won:         this.won,
     xTiles:      this.xTiles,
+    movableX:    this.movableX,
     keepPlaying: this.keepPlaying
   };
 };
@@ -153,6 +161,8 @@ GameManager.prototype.moveTile = function (tile, cell) {
   this.grid.cells[cell.x][cell.y] = tile;
   tile.updatePosition(cell);
 };
+
+
 
 // Move tiles on the grid in the specified direction
 GameManager.prototype.move = function (direction) {
@@ -193,10 +203,10 @@ GameManager.prototype.move = function (direction) {
           self.score += merged.value;
           // The mighty 2048 tile
           if (merged.value === Math.max(Math.pow(2,14-self.xTiles),16)) self.won = true;
-        } else {
+        } else if (self.movableX ? true:tile.value != "x") {
           self.moveTile(tile, positions.farthest);
         }
-
+        console.log(self.movableX)
         if (!self.positionsEqual(cell, tile)) {
           moved = true; // The tile moved from its original cell!
         }
