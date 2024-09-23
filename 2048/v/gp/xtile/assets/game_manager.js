@@ -22,7 +22,6 @@ GameManager.prototype.xTilesPlus = function () {
   this.xTiles += 1;
   if (this.xTiles > 12) this.xTiles = 12;
   else this.restart()
-  console.log(this.xTiles)
 }
 GameManager.prototype.xTilesMinus = function () {
   this.xTiles -= 1;
