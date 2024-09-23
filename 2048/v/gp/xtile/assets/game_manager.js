@@ -206,7 +206,6 @@ GameManager.prototype.move = function (direction) {
         } else if (self.movableX ? true:tile.value != "x") {
           self.moveTile(tile, positions.farthest);
         }
-        console.log(self.movableX)
         if (!self.positionsEqual(cell, tile)) {
           moved = true; // The tile moved from its original cell!
         }
