@@ -4,12 +4,7 @@
   <title>X-Tile 2048</title>
 
   <link href="assets/main.css" rel="stylesheet" type="text/css">
-  <link rel="shortcut icon" href="https://play2048.co/favicon.ico">
-
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0, maximum-scale=1, user-scalable=no, minimal-ui">
-  <meta name="format-detection" content="telephone=no">
+  <link rel="shortcut icon" href="assets/favicon.ico">
 
   <div class="container">
     <div class="heading">
@@ -68,14 +63,17 @@
 
       <div class="tile-container"></div>
     </div>
-
+    <br>
+    <label><input type="checkbox" id="toggleCheckbox"> Movable X tiles</label>
     <p class="game-explanation">
       <strong class="important">How to play:</strong> Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong>
+      <hr>
+      <p><strong>X tiles</strong> can't be merged with each other, making the game harder. If you enable the "Movable X tiles" checkbox, you can move the X tiles.
+      <br>
+      <strong class="important">Important:</strong> Some boards may be impossible depending on the settings. The X tile generation is completely random, so you may end up with an impossible board if you select a high number of X tiles or disable movable X tiles.
+      </p>
     </p>
 
-  <script src="assets/bind_polyfill.js"></script>
-  <script src="assets/classlist_polyfill.js"></script>
-  <script src="assets/animframe_polyfill.js"></script>
   <script src="assets/keyboard_input_manager.js"></script>
   <script src="assets/html_actuator.js"></script>
   <script src="assets/grid.js"></script>
