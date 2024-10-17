@@ -59,12 +59,20 @@
 
       <div class="tile-container"></div>
     </div>
-
+    <br>
+    <p>
+    <div class="slider-container"><input type="range" min="1" max="32" value="4" class="slider" id="sizeXslider"><span id="sizeXtext"></span></div><br>
+    <div class="slider-container"><input type="range" min="1" max="32" value="4" class="slider" id="sizeYslider"><span id="sizeYtext"></span></div><br>
+    <a class="apply-button">Apply grid size</a>
+    </p>
     <p class="game-explanation">
       <strong class="important">How to play:</strong> Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong>
     </p>
-    <br>
-    <a href="v">More variants</a>
+    <hr>
+    <p>This is a modified version of 2048 that supports any grid size. Colors for nonexistent tiles are automatically taken from other defined tiles. If you want to make a modified 2048 game, you should use this version, as this version includes some improvements to the official 2048. Modification created by NumbersTada.</p>
+
+    <a href="v"><center>More variants</center></a>
+
   <script src="assets/keyboard_input_manager.js"></script>
   <script src="assets/html_actuator.js"></script>
   <script src="assets/grid.js"></script>
