@@ -112,6 +112,8 @@ Grid.prototype.serialize = function () {
   }
 
   return {
+    sizeX: this.sizeX,
+    sizeY: this.sizeY,
     cells: cellState
   };
 };
