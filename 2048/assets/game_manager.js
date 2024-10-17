@@ -27,6 +27,7 @@ GameManager.prototype.applySettings = function () {
   this.sizeX = parseInt(this.sliderX.value);
   this.sizeY = parseInt(this.sliderY.value);
   this.storageManager.setSelected(this.sizeX, this.sizeY);
+  this.actuator.continueGame(); // Clear the game won/lost message
   this.setup();
 }
 // Keep playing after winning (allows going over 2048)
