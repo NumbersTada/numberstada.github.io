@@ -6,29 +6,175 @@ function GameManager(sizeX, sizeY, InputManager, Actuator, StorageManager) {
   this.actuator       = new Actuator;
 
   this.startTiles     = 2;
+  this.guiScale       = 1;
+  this.dark           = false;
+  this.debug          = false;
 
   this.inputManager.on("move", this.move.bind(this));
   this.inputManager.on("restart", this.restart.bind(this));
   this.inputManager.on("keepPlaying", this.keepPlaying.bind(this));
-  this.inputManager.on("applySettings", this.applySettings.bind(this));
+  this.inputManager.on("undo", this.undo.bind(this));
+  this.inputManager.on("closeTileValueInputBox", function () {document.getElementById("tile-value-input-overlay").style.display = "none"});
+  this.inputManager.on("okTileValueInputBox", this.applyTileValue.bind(this));
+  this.inputManager.on("openSettings", function () {document.getElementById("settings-overlay").style.display = "flex"});
+  this.inputManager.on("closeSettings", function () {document.getElementById("settings-overlay").style.display = "none"});
+  this.inputManager.on("esc", function () {
+    document.getElementById("settings-overlay").style.display = "none";
+    document.getElementById("tile-value-input-overlay").style.display = "none";
+  });
+
+  function cap(value, min, max) {return Math.min(Math.max(min, value), max)};
+  var self = this;
+  document.getElementById("board-scale-input").addEventListener("blur", function () {self.guiScale = parseFloat(this.value) || 1; self.actuator.continueGame; self.setup(undoNoReset = true, closePopups = false)});
+  document.getElementById("width-input").addEventListener("blur", function () {self.sizeX = cap(parseInt(this.value) || 4, 1, 64); self.applySize()});
+  document.getElementById("height-input").addEventListener("blur", function () {self.sizeY = cap(parseInt(this.value) || 4, 1, 64); self.applySize()});
+
+  var settings = this.storageManager.getSettings();
+  if (settings) {
+    this.dark     = settings.dark;
+    this.guiScale = settings.guiScale;
+  } else {
+    this.dark     = false;
+    this.guiScale = 1;
+  };
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const width = parseInt(urlParams.get("width"));
+  const height = parseInt(urlParams.get("height"));
+  if (width && height) this.storageManager.setSelected(width, height);
+  //else this.delParams("width","height")
 
   this.setup();
-  this.sliderInit();
+  this.timeUpdateInit();
+  this.checkboxInit();
+
+  this.setParam("width", this.sizeX);
+  this.setParam("height", this.sizeY);
+
+  this.UNMERGABLE = ["immovable", "unmergable"];
+  this.IMMOVABLE = ["immovable"];
+}
+
+GameManager.prototype.getGoal = function () {
+  var total = this.sizeX * this.sizeY;
+  var adjust = total <= 8 ? 0 : total <= 10 ? -1 : total <= 13 ? -3 : total <= 16 ? -5 : total <= 20 ? -7 : total <= 25 ? -9 : -16
+  var current = Math.max(4, 2 ** (total + adjust))
+  var max = null;
+  this.grid.eachCell(function (x, y, tile) {if (tile) {max = Math.max(max, tile.value)}})
+  while (current <= max) {
+    current *= 2;
+  };
+  return current
+}
+
+
+GameManager.prototype.delParams = function (...keys) {
+  const url = new URL(window.location);
+  const params = new URLSearchParams(url.search);
+  keys.forEach(key => {params.delete(key)});
+  url.search = params.toString();
+  window.history.replaceState({}, "", url);
+}
+
+GameManager.prototype.setParam = function (key, value) {
+  const url = new URL(window.location);
+  const params = new URLSearchParams(url.search);
+  params.set(key, value);
+  url.search = params.toString();
+  window.history.replaceState({}, "", url);
+}
+
+
+GameManager.prototype.tileClickInit = function () {
+  var self = this;
+  function callback (event, isTile = true) {
+    if (!self.debug) return;
+    event.preventDefault();
+    var tileElement = isTile ? event.target.parentElement : event.target;
+    if (isTile) {var position = Array.from(tileElement.classList).find(cls => cls.startsWith("tile-position-")).replace(/^tile-position-/, "").split("-")}
+    else {var position = Array.from(tileElement.classList).find(cls => cls.startsWith("grid-cell-position-")).replace(/^grid-cell-position-/, "").split("-")};
+    self.selTileX = parseInt(position[0]) - 1;
+    self.selTileY = parseInt(position[1]) - 1;
+    
+    var current = self.grid.cells[self.selTileX][self.selTileY]
+    if (!current) current = "";
+    else current = current.value || "";
+    if (current != "") current = current.toString();
+    document.getElementById("tile-value-input").value = current;
+    document.getElementById("tile-value-input-title").innerText = "Set Tile Value at (" + self.selTileX + ", " + self.selTileY + ")";
+    document.getElementById("tile-value-input-overlay").style.display = "flex";
+  }
+  document.querySelector(".tile-container").addEventListener("contextmenu", callback);
+  document.querySelectorAll(".grid-cell").forEach(cell => {cell.addEventListener("contextmenu", function (event) {callback(event, isTile = false)})});
+};
+
+GameManager.prototype.applyTileValue = function () {
+  var value = document.getElementById("tile-value-input").value;
+  var intValue = parseFloat(value);
+  if (value === "") this.grid.removeTile({x: this.selTileX, y: this.selTileY});
+  else this.grid.insertTile(new Tile({x: this.selTileX, y: this.selTileY}, intValue ? intValue : value));
+  document.getElementById("tile-value-input-overlay").style.display = "none";
+  this.prepareTiles();
+  this.actuate();
+};
+
+GameManager.prototype.setDarkMode = function(enabled) {
+  if (enabled) {
+    this.dark = true;
+    document.body.classList.add("dark-mode");
+    document.documentElement.classList.add("dark-mode");
+    document.querySelector(".game-container").style.background = "#a19383";
+    document.querySelector(".score-container").style.background = "#3c3a33";
+    document.querySelector(".best-container").style.background = "#3c3a33";
+    document.querySelector(".restart-button").style.background = "#e46848";
+    document.querySelector(".undo-button").style.background = "#e46848";
+    document.querySelector(".dialog-box").style.background = "#3b3836";
+    document.querySelector("#settings-dialog-box").style.background = "#3b3836";
+    //document.querySelector('input[type="text"], input[type="number"]').style.background = "#4d4136";
+    
+  } else {
+    this.dark = false;
+    document.body.classList.remove("dark-mode");
+    document.documentElement.classList.remove("dark-mode");
+    document.querySelector(".game-container").style.background = "#bbada0";
+    document.querySelector(".score-container").style.background = "#bbada0";
+    document.querySelector(".best-container").style.background = "#bbada0";
+    document.querySelector(".restart-button").style.background = "#8f7a66";
+    document.querySelector(".undo-button").style.background = "#8f7a66";
+    document.querySelector(".dialog-box").style.background = "#eee4da";
+    document.querySelector("#settings-dialog-box").style.background = "#eee4da";
+  };
+}
+
+GameManager.prototype.checkboxInit = function () {
+  var self = this;
+  document.getElementById("dark-mode-checkbox").addEventListener("change", function () {self.setDarkMode(this.checked)});
+  document.getElementById("debug-mode-checkbox").addEventListener("change", function () {
+    if (self.debug && !this.checked) {
+      self.debug = this.checked;
+      self.restart(closePopups = false)
+    } else {
+      self.debug = this.checked;
+      self.prepareTiles()
+    };
+    self.actuate();
+    });
 }
 
 // Restart the game
-GameManager.prototype.restart = function () {
+GameManager.prototype.restart = function (closePopups = true) {
   this.storageManager.clearGameState(this.sizeX, this.sizeY);
+  this.previousGrid = null;
   this.actuator.continueGame(); // Clear the game won/lost message
-  this.setup();
+  this.setup(false, closePopups);
 };
 
-GameManager.prototype.applySettings = function () {
-  this.sizeX = parseInt(this.sliderX.value);
-  this.sizeY = parseInt(this.sliderY.value);
+GameManager.prototype.applySize = function () {
   this.storageManager.setSelected(this.sizeX, this.sizeY);
+  this.setParam("width", this.sizeX);
+  this.setParam("height", this.sizeY);
   this.actuator.continueGame(); // Clear the game won/lost message
-  this.setup();
+  this.setup(false, false);
 }
 // Keep playing after winning (allows going over 2048)
 GameManager.prototype.keepPlaying = function () {
@@ -42,33 +188,50 @@ GameManager.prototype.isGameTerminated = function () {
 };
 
 // Set up the game
-GameManager.prototype.setup = function () {
+GameManager.prototype.setup = function (undoNoReset = false, closePopups = true) {
+  if (closePopups) {
+    document.getElementById("tile-value-input-overlay").style.display = "none";
+    document.getElementById("settings-overlay").style.display = "none";
+  };
   var selected = this.storageManager.getSelected().split("x").map(Number);
   this.sizeX = selected[0];
   this.sizeY = selected[1];
+  document.getElementById("width-input").value = this.sizeX;
+  document.getElementById("height-input").value = this.sizeY;
   var previousState = this.storageManager.getGameState(this.sizeX, this.sizeY);
-
   // Reload the game from a previous game if present
   if (previousState) {
     this.grid        = new Grid(previousState.grid.sizeX, previousState.grid.sizeY,
                                 previousState.grid.cells); // Reload grid
-    this.score       = previousState.score;
     this.over        = previousState.over;
     this.won         = previousState.won;
-    this.keepPlaying = previousState.keepPlaying;
-    this.sizeX       = previousState.sizeX;
-    this.sizeY       = previousState.sizeY;
+    if (!undoNoReset) {
+      this.score       = previousState.score;
+      this.keepPlaying = previousState.keepPlaying;
+      this.moves       = previousState.moves;
+      this.undos       = previousState.undos;
+      this.startTime   = Date.now() - previousState.time;
+      this.time        = previousState.time;
+      this.debug       = previousState.debug;
+    }
   } else {
     this.grid        = new Grid(this.sizeX, this.sizeY);
-    this.score       = 0;
     this.over        = false;
     this.won         = false;
-    this.keepPlaying = false;
+    if (!undoNoReset) {
+      this.keepPlaying = false;
+      this.score       = 0;
+      this.moves       = 0;
+      this.undos       = 0;
+      this.startTime   = null;
+      this.time        = 0;
+    }
 
     // Add the initial tiles
     this.addStartTiles();
   }
   this.updateGrid();
+
   // Update the actuator
   this.actuate();
 };
@@ -76,59 +239,71 @@ GameManager.prototype.setup = function () {
 GameManager.prototype.updateGrid = function () {
   const gridContainer = document.querySelector(".grid-container");
 
-  let gridHTML = "";
+  var gridHTML = "";
 
-  for (let y = 0; y < this.sizeY; y++) {
+  for (var y = 0; y < this.sizeY; y++) {
     gridHTML += '<div class="grid-row">';
-    for (let x = 0; x < this.sizeX; x++) {
-      gridHTML += '<div class="grid-cell"></div>';
+    for (var x = 0; x < this.sizeX; x++) {
+      gridHTML += '<div class="grid-cell grid-cell-position-' + (x+1) + "-" + (y+1) + '"></div>';
     }
     gridHTML += "</div>";
   }
   // Apply the generated HTML
   gridContainer.innerHTML = gridHTML;
+  this.tileClickInit();
   this.updateGridCSS()
 };
 
 GameManager.prototype.updateGridCSS = function () {
-  const containerSize = 500;
-  const sizeA = Math.max(this.sizeX, this.sizeY);
-  const padding = Math.max(2, Math.min(15, Math.floor(60 / sizeA)));
+  var scale = this.guiScale; // You can change this for bigger boards, 1.22 to make the board fit on the screen
 
-  const totalPaddingX = padding * (this.sizeX + 1);
-  const totalPaddingY = padding * (this.sizeY + 1);
-  const availableWidth = containerSize - totalPaddingX;
-  const availableHeight = containerSize - totalPaddingY;
-  const tileWidth = Math.min(availableWidth / this.sizeX, availableHeight / this.sizeY);
-  const tileHeight = tileWidth;
+  var containerSize = 500 * scale;
+  var sizeA = Math.max(this.sizeX, this.sizeY);
+  var padding = Math.max(1, Math.min(15, Math.round(60 / sizeA))) * scale;
 
-  const existingStyle = document.querySelector("#dynamic-grid-css");
+  var totalPaddingX = padding * (this.sizeX + 1);
+  var totalPaddingY = padding * (this.sizeY + 1);
+  var availableWidth = containerSize - totalPaddingX;
+  var availableHeight = containerSize - totalPaddingY;
+  var tileWidth = Math.floor(Math.min(availableWidth / this.sizeX, availableHeight / this.sizeY));
+  var tileHeight = tileWidth;
+  var borderRadius = Math.floor(tileWidth / 106 * 3 * scale);
+  var gameBorderRadius = Math.floor(containerSize / 500 * 6 * scale);
+  borderRadius = 3;       // This mimics the style of other modified games with different grid by keeping the same padding, comment to disable
+  gameBorderRadius = 6;
+
+  var existingStyle = document.querySelector("#dynamic-grid-css");
   if (existingStyle) existingStyle.remove();
 
-  const styleSheet = document.createElement("style");
+  var styleSheet = document.createElement("style");
   styleSheet.id = "dynamic-grid-css";
   styleSheet.type = "text/css";
   var cssContent = `
     .container {
-      /*width: ${totalPaddingX + tileWidth * this.sizeX}px; */}
+      width: ${containerSize}px; }
     .game-container {
+      border-radius: ${gameBorderRadius}px;
       padding: ${padding}px;
       width: ${totalPaddingX + tileWidth * this.sizeX}px;
       height: ${totalPaddingY + tileHeight * this.sizeY}px; }
+    .game-container .game-message p {
+      margin-top: ${(Math.floor((totalPaddingY + tileHeight * this.sizeY) / 2) - 40) * scale}px; }
     .grid-container {
       width: ${totalPaddingX + tileWidth * this.sizeX}px;
       height: ${totalPaddingY + tileHeight * this.sizeY}px; }
     .grid-row {
       margin-bottom: ${padding}px; }
     .grid-cell {
+      border-radius: ${borderRadius}px;
       width: ${tileWidth}px;
       height: ${tileHeight}px;
       margin-right: ${padding}px; }
     .tile, .tile .tile-inner {
+      border-radius: ${borderRadius}px;
       width: ${tileWidth}px;
       height: ${tileHeight}px;
       line-height: ${tileHeight}px; }
-  `;
+    `;
 
   for (var x = 0; x < this.sizeX; x++) {
     for (var y = 0; y < this.sizeY; y++) {
@@ -142,26 +317,10 @@ GameManager.prototype.updateGridCSS = function () {
     }
   }
   this.actuator.tileHeight = tileHeight;
-  // Apply the dynamically generated CSS
+
   styleSheet.innerHTML = cssContent;
   document.head.appendChild(styleSheet);
 };
-
-GameManager.prototype.sliderInit = function () {
-  var self = this;
-
-  this.sliderX = document.getElementById("sizeXslider");
-  var outputX = document.getElementById("sizeXtext")
-  this.sliderX.value = this.sizeX;
-  outputX.textContent = this.sliderX.value;
-  this.sliderX.oninput = function() {outputX.textContent = this.value};
-
-  this.sliderY = document.getElementById("sizeYslider");
-  var outputY = document.getElementById("sizeYtext")
-  this.sliderY.value = this.sizeY;
-  outputY.textContent = this.sliderY.value;
-  this.sliderY.oninput = function() {outputY.textContent = this.value};
-}
 
 // Set up the initial tiles to start the game with
 GameManager.prototype.addStartTiles = function () {
@@ -170,11 +329,24 @@ GameManager.prototype.addStartTiles = function () {
   }
 };
 
+// Set up a board with pregenerated tiles for visual testing
+GameManager.prototype.addStartTilesTest = function () {
+  var self = this;
+  this.grid.eachCell(function (x, y, tile) {
+    var tile = new Tile({x: x, y: y}, 2 ** (y * self.sizeX + x + 1));
+    self.grid.insertTile(tile);
+  })
+};
+
+
+
 // Adds a tile in a random position
 GameManager.prototype.addRandomTile = function () {
   if (this.grid.cellsAvailable()) {
     var value = Math.random() < 0.9 ? 2 : 4;
-    var tile = new Tile(this.grid.randomAvailableCell(), value);
+    //var special = Math.random() < 0.3 ? Math.random() < 0.5 ? "immovable" : "unmergable" : null
+    var special = null;
+    var tile = new Tile(this.grid.randomAvailableCell(), special ? 0 : value, special);
 
     this.grid.insertTile(tile);
   }
@@ -182,25 +354,38 @@ GameManager.prototype.addRandomTile = function () {
 
 // Sends the updated grid to the actuator
 GameManager.prototype.actuate = function () {
-  if (this.storageManager.getBestScore(this.sizeX, this.sizeY) < this.score) {
-    this.storageManager.setBestScore(this.score, this.sizeX, this.sizeY);
-  }
+  this.goal = this.getGoal();
+  this.actuator.displayTopTile(this.goal);
+  document.querySelector(".score-container").style.color = this.debug ? "red" : "white";
+  document.getElementById("debug-mode-checkbox").checked = this.debug;
+  document.querySelector(".game-intro").innerHTML = this.debug ? "Debug mode is <strong>ON!</strong>" : "Join the numbers and get to the <strong>" + this.goal + " tile!</strong>";
+  if (!this.debug) {
+    if (this.storageManager.getBestScore(this.sizeX, this.sizeY) < this.score) {
+      this.storageManager.setBestScore(this.score, this.sizeX, this.sizeY);
+    };
+  };
 
   // Clear the state when the game is over (game over only, not win)
   if (this.over) {
-    this.storageManager.clearGameState();
+    this.storageManager.clearGameState(this.sizeX, this.sizeY);
   } else {
     this.storageManager.setGameState(this.serialize(), this.sizeX, this.sizeY);
   }
+
+  this.storageManager.setSettings({dark: this.dark, guiScale: this.guiScale});
+
+  this.setDarkMode(this.dark);
+  document.getElementById("dark-mode-checkbox").checked = this.dark;
 
   this.actuator.actuate(this.grid, {
     score:      this.score,
     over:       this.over,
     won:        this.won,
     bestScore:  this.storageManager.getBestScore(this.sizeX, this.sizeY),
-    terminated: this.isGameTerminated()
+    terminated: this.isGameTerminated(),
+    moves:      this.moves,
+    undos:      this.undos,
   });
-
 };
 
 // Represent the current game as an object
@@ -211,10 +396,42 @@ GameManager.prototype.serialize = function () {
     over:        this.over,
     won:         this.won,
     keepPlaying: this.keepPlaying,
-    sizeX:       this.sizeX,
-    sizeY:       this.sizeY
+    moves:       this.moves,
+    undos:       this.undos,
+    time:        this.time,
+    debug:       this.debug,
   };
 };
+
+
+GameManager.prototype.timeUpdateInit = function () {
+  setTimeout(this.timeUpdate.bind(this));
+  setTimeout(this.timeSaveUpdate.bind(this));
+}
+
+GameManager.prototype.formatTime = function (time) {
+  const t = new Date(time);
+  const h = t.getUTCHours();
+  const m = t.getUTCMinutes();
+  const s = t.getUTCSeconds();
+  const ms = t.getUTCMilliseconds();
+  return (h?h+":":"")+(h||m?(""+m).padStart(h?2:0,"0")+":":"")+(""+s).padStart(h||m?2:0,"0")+"."+(""+ms).padStart(3,"0");
+}
+
+GameManager.prototype.timeUpdate = function () {
+  this.time = this.startTime ? Date.now() - this.startTime : null
+  document.getElementById("timeText").innerText = this.formatTime(this.time);
+  window.requestAnimationFrame(this.timeUpdate.bind(this));
+}
+
+GameManager.prototype.timeSaveUpdate = function () {
+  if (this.over) {
+    this.storageManager.clearGameState(this.sizeX, this.sizeY);
+  } else {
+    this.storageManager.setGameState(this.serialize(), this.sizeX, this.sizeY);
+  };
+  setTimeout(this.timeSaveUpdate.bind(this),1000);
+}
 
 // Save all tile positions and remove merger info
 GameManager.prototype.prepareTiles = function () {
@@ -233,21 +450,48 @@ GameManager.prototype.moveTile = function (tile, cell) {
   tile.updatePosition(cell);
 };
 
+
+function deepcopy(obj) {
+  if (obj === null || typeof obj !== "object") return obj;
+  const copy = Object.create(Object.getPrototypeOf(obj));
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) copy[key] = deepcopy(obj[key]);
+  };
+  return copy;
+}
+
+
+GameManager.prototype.testFibonacci = function(value) {
+  var fib = [1,1]
+
+  while (value > fib[fib.length-1]) fib.push(fib[fib.length-1] + fib[fib.length-2]);
+  
+  for (var i = 0; i<fib.length && value>=fib[i]; i++) {
+    if (value === fib[i]) return true;
+  };
+  return false;
+};
+
+
+
 // Move tiles on the grid in the specified direction
-GameManager.prototype.move = function (direction) {
+GameManager.prototype.move = function (direction, actuate = true) {
   // 0: up, 1: right, 2: down, 3: left
+  function abs(number) {return typeof number == "number" ? Math.abs(number) : number};
+  
+  var prevState = this.grid.serialize().cells;
+  var prevScore = this.score;
+
   var self = this;
-
-  if (this.isGameTerminated()) return; // Don't do anything if the game's over
-
+  if (actuate && this.isGameTerminated()) return; // Don't do anything if the game's over
   var cell, tile;
 
   var vector     = this.getVector(direction);
   var traversals = this.buildTraversals(vector);
   var moved      = false;
-
+  var merges     = 0;
   // Save the current tile positions and remove merger information
-  this.prepareTiles();
+  if (actuate) this.prepareTiles();
   // Traverse the grid in the right direction and move tiles
   traversals.x.forEach(function (x) {
     traversals.y.forEach(function (y) {
@@ -259,22 +503,24 @@ GameManager.prototype.move = function (direction) {
         var next      = self.grid.cellContent(positions.next);
 
         // Only one merger per row traversal?
-        if (next && next.value === tile.value && !next.mergedFrom) {
+        if (next && abs(next.value) === abs(tile.value) && !next.mergedFrom && !self.UNMERGABLE.includes(next.special) && !self.UNMERGABLE.includes(tile.special)) {
+//        if (next && self.testFibonacci(tile.value + next.value) && !next.mergedFrom) {
           var merged = new Tile(positions.next, tile.value + next.value);
-          merged.mergedFrom = [tile, next];
-
+          if (actuate) merged.mergedFrom = [tile, next];
+          merges++;
           self.grid.insertTile(merged);
           self.grid.removeTile(tile);
 
           // Converge the two tiles' positions
           tile.updatePosition(positions.next);
 
+          if (actuate) {
           // Update the score
-          self.score += merged.value;
-
-          // The mighty 2048 tile
-          if (merged.value === 2048) self.won = true;
-        } else {
+            self.score += Math.abs(merged.value);
+            // The mighty 2048 tile
+            if (merged.value == self.goal) self.won = true;
+          }
+        } else if (!self.IMMOVABLE.includes(tile.special)) {
           self.moveTile(tile, positions.farthest);
         }
 
@@ -285,16 +531,43 @@ GameManager.prototype.move = function (direction) {
     });
   });
 
-
-  if (!this.movesAvailable()) {
-    this.over = true; // Game over!
-    this.actuate();
-  } else if (moved) {
+  if (moved) {
     this.addRandomTile();
-    this.actuate();
+    if (actuate) {
+      if (!this.startTime && actuate) this.startTime = Date.now() + this.time;
+      this.previousGrid = prevState;
+      this.previousScore = prevScore;
+      if (!this.movesAvailable()) this.over = true;
+      this.moves += 1;
+      this.actuate();
+      var sound = "assets/sounds/"
+      if (merges == 0) sound += "move"
+      if (merges == 1) sound += "merge1"
+      if (merges == 2) sound += "merge2"
+      if (merges >= 3) sound += "merge3"
+      sound += ".mp3"
+      new Audio(sound).play()
+    };
   }
+  return moved;
 
 };
+
+GameManager.prototype.undo = function () {
+  if (this.previousGrid) {
+    this.actuator.clearMessage();
+    this.setup(noTimeReset = true);
+    this.undos += 1;
+    this.moves -= 1;
+    this.grid.cells = this.grid.fromState(this.previousGrid);
+    this.score = this.previousScore;
+    this.previousGrid = null;
+    this.previousScore = null;
+    this.actuator.continueGame(); // Clear the game won/lost message
+    new Audio("assets/sounds/click2.mp3").play();
+    this.actuate();
+  } else new Audio("assets/sounds/click1.mp3").play();
+}
 
 // Get the vector representing the chosen direction
 GameManager.prototype.getVector = function (direction) {
@@ -344,35 +617,16 @@ GameManager.prototype.findFarthestPosition = function (cell, vector) {
 };
 
 GameManager.prototype.movesAvailable = function () {
-  return this.grid.cellsAvailable() || this.tileMatchesAvailable();
-};
-
-// Check for available matches between tiles (more expensive check)
-GameManager.prototype.tileMatchesAvailable = function () {
-  var self = this;
-
-  var tile;
-
-  for (var x = 0; x < this.sizeX; x++) {
-    for (var y = 0; y < this.sizeY; y++) {
-      tile = this.grid.cellContent({ x: x, y: y });
-
-      if (tile) {
-        for (var direction = 0; direction < 4; direction++) {
-          var vector = self.getVector(direction);
-          var cell   = { x: x + vector.x, y: y + vector.y };
-
-          var other  = self.grid.cellContent(cell);
-
-          if (other && other.value === tile.value) {
-            return true; // These two tiles can be merged
-          }
-        }
-      }
-    }
-  }
-
-  return false;
+  var possible = false;
+  for (var dir = 0; dir < 4; dir++) {
+    var gridClone = deepcopy(this.grid);
+    var gridBackup = this.grid;
+    this.grid = gridClone;
+    const moved = this.move(dir, actuate = false);
+    possible = possible || moved;
+    this.grid = gridBackup;
+  };
+  return possible;
 };
 
 GameManager.prototype.positionsEqual = function (first, second) {

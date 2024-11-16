@@ -69,13 +69,25 @@ KeyboardInputManager.prototype.listen = function () {
     if (!modifiers && event.which === 82) {
       self.restart.call(self, event);
     }
-  });
+    // U key is undo
+    if (!modifiers && event.which === 85) {
+      self.undo.call(self, event);
+    }
+    // Esc key closes popups
+    if (!modifiers && event.which === 27) {
+      self.esc.call(self, event);
+    }
+    });
 
   // Respond to button presses
   this.bindButtonPress(".retry-button", this.restart);
   this.bindButtonPress(".restart-button", this.restart);
   this.bindButtonPress(".keep-playing-button", this.keepPlaying);
-  this.bindButtonPress(".apply-button", this.applySettings);
+  this.bindButtonPress(".undo-button", this.undo);
+  this.bindButtonPress("#tile-value-input-ok-button", this.okTileValueInputBox);
+  this.bindButtonPress("#tile-value-input-cancel-button", this.closeTileValueInputBox);
+  this.bindButtonPress(".settings-button", this.openSettings);
+  this.bindButtonPress("#settings-close-button", this.closeSettings);
 
   // Respond to swipe events
   var touchStartClientX, touchStartClientY;
@@ -135,17 +147,49 @@ KeyboardInputManager.prototype.listen = function () {
 
 KeyboardInputManager.prototype.restart = function (event) {
   event.preventDefault();
+  new Audio("assets/sounds/click2.mp3").play();
   this.emit("restart");
 };
 
 KeyboardInputManager.prototype.keepPlaying = function (event) {
   event.preventDefault();
+  new Audio("assets/sounds/click2.mp3").play();
   this.emit("keepPlaying");
 };
 
-KeyboardInputManager.prototype.applySettings = function (event) {
+KeyboardInputManager.prototype.undo = function (event) {
   event.preventDefault();
-  this.emit("applySettings");
+  this.emit("undo");
+};
+
+KeyboardInputManager.prototype.esc = function (event) {
+  event.preventDefault();
+  new Audio("assets/sounds/click1.mp3").play();
+  this.emit("esc");
+};
+
+KeyboardInputManager.prototype.closeTileValueInputBox = function (event) {
+  event.preventDefault();
+  new Audio("assets/sounds/click1.mp3").play();
+  this.emit("closeTileValueInputBox");
+};
+
+KeyboardInputManager.prototype.okTileValueInputBox = function (event) {
+  event.preventDefault();
+  new Audio("assets/sounds/click2.mp3").play();
+  this.emit("okTileValueInputBox");
+};
+
+KeyboardInputManager.prototype.openSettings = function (event) {
+  event.preventDefault();
+  new Audio("assets/sounds/click2.mp3").play();
+  this.emit("openSettings");
+};
+
+KeyboardInputManager.prototype.closeSettings = function (event) {
+  event.preventDefault();
+  new Audio("assets/sounds/click1.mp3").play();
+  this.emit("closeSettings");
 };
 
 KeyboardInputManager.prototype.bindButtonPress = function (selector, fn) {

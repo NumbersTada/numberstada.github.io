@@ -4,10 +4,15 @@ function HTMLActuator() {
   this.bestContainer    = document.querySelector(".best-container");
   this.messageContainer = document.querySelector(".game-message");
   this.score = 0;
+  this.maxCap = 65536;
+  this.minCap = -65536;
 }
 
 HTMLActuator.prototype.actuate = function (grid, metadata) {
   var self = this;
+
+  var urlParams = new URLSearchParams(window.location.search);
+  this.fullNumbers = parseInt(urlParams.get("fullNumbers"));
 
   window.requestAnimationFrame(function () {
     self.clearContainer(self.tileContainer);
@@ -25,11 +30,15 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
 
     if (metadata.terminated) {
       if (metadata.over) {
+        if (!self.wlSound) self.wlSound = setTimeout(function () {audio = new Audio("assets/sounds/lose.mp3"); audio.play(); audio.addEventListener("ended", function() {self.wlSound = null}.bind(self))}.bind(self), 1300)
         self.message(false); // You lose
       } else if (metadata.won) {
+        if (!self.wlSound) self.wlSound = setTimeout(function () {audio = new Audio("assets/sounds/win.mp3"); audio.play(); audio.addEventListener("ended", function() {self.wlSound = null}.bind(self))}.bind(self), 1300)
         self.message(true); // You win!
       }
     }
+    document.getElementById("movesText").innerText = metadata.moves + " move" + (metadata.moves == 1 ? "" : "s");
+    document.querySelector(".undo-button").innerText = "Undo (" + metadata.undos + ")";
 
   });
 };
@@ -52,6 +61,7 @@ HTMLActuator.prototype.clearContainer = function (container) {
 };
 
 HTMLActuator.prototype.addTile = function (tile) {
+  function abs(number) {return typeof number == "number" ? Math.abs(number) : number};
   var self = this;
 
   var wrapper   = document.createElement("div");
@@ -62,25 +72,30 @@ HTMLActuator.prototype.addTile = function (tile) {
   // We can't use classlist because it somehow glitches when replacing classes
   var classes = ["tile", "tile-" + tile.value, positionClass];
 
-  if (tile.value > 2048) classes.push("tile-super");
+  if (tile.value > this.maxCap) classes.push("tile-super");
+  if (tile.value < this.minCap) classes.push("tile-sub");
+
+  if (tile.special) {
+    classes.push("tile-special-" + tile.special);
+  }
 
   this.applyClasses(wrapper, classes);
-
   inner.classList.add("tile-inner");
   inner.textContent = tile.value;
-
-  const tileSize = this.tileHeight;
-  var fontSize = parseInt((tileSize * 0.6) / ((Math.max(tile.value.toString().length, 2) + 1.3) * 0.33));
+  var tileSize = this.tileHeight;
+  var fontSize = tile.special ? 0 : parseInt((tileSize * 0.6) / ((Math.max(tile.value.toString().length, 2) + 1.3) * 0.33));
   inner.style.fontSize = fontSize + "px";
 
+  var value2 = tile.value;
+  tile.value = tile.value.length ? Math.floor(1.5 ** tile.value.length) : tile.value;
+  if (tile.value <= this.maxCap && tile.value >= this.minCap && !tile.special) {
+    var {backgroundColor, textColor, boxShadow} = this.getAverageColor(tile.value);
+    inner.style.backgroundColor = backgroundColor;
+    inner.style.color = abs(tile.value) < 1 ? abs(tile.value) <= 0.7 ? "#f9f6f2" : "#776e65" : abs(tile.value) > 4 && abs(tile.value) < 6 ? "#776e65" : abs(tile.value) >= 6 && abs(tile.value) <= 7 ? "#f9f6f2" : textColor;
+    inner.style.boxShadow = boxShadow;
+  };
+  tile.value = value2;
 
-  if (tile.value < 2048) {
-  const { backgroundColor, textColor, boxShadow } = this.getAverageColor(tile.value);
-
-  inner.style.backgroundColor = backgroundColor;
-  inner.style.color = tile.value > 4 && tile.value < 6 ? "rgb(119, 110, 101)" : tile.value >= 6 && tile.value <= 7 ? "rgb(249, 246, 242)" : textColor; // This is to make 5, 6, 7 tiles not look weird
-  inner.style.boxShadow = boxShadow;
-  }
   if (tile.previousPosition) {
     // Make sure that the tile gets rendered in the previous position first
     window.requestAnimationFrame(function () {
@@ -107,74 +122,127 @@ HTMLActuator.prototype.addTile = function (tile) {
   this.tileContainer.appendChild(wrapper);
 };
 
+HTMLActuator.prototype.displayTopTile = function (tileValue) {
+  var wrapper = document.createElement("div");
+  var inner = document.createElement("div");
+
+  wrapper.classList.add("tile", "tile-" + tileValue, "top-tile");
+  inner.classList.add("tile-inner");
+  inner.textContent = tileValue;
+
+  if (tileValue > this.maxCap) wrapper.classList.add("tile-super");
+  if (tileValue < this.minCap) wrapper.classList.add("tile-sub");
+
+  var tileSize = 106;
+  var fontSize = parseInt((tileSize * 0.6) / ((Math.max(tileValue.toString().length, 2) + 1.3) * 0.33));
+  inner.style.fontSize = fontSize + "px";
+
+  var value2 = tileValue;
+  tileValue = tileValue.length ? Math.floor(1.5 ** tileValue.length) : tileValue;
+  if (tileValue <= this.maxCap && tileValue >= this.minCap) {
+    var {backgroundColor, textColor, boxShadow} = this.getAverageColor(tileValue);
+    inner.style.backgroundColor = backgroundColor;
+    inner.style.color = textColor;
+    inner.style.boxShadow = boxShadow;
+  };
+  tileValue = value2;
+  wrapper.style.width = tileSize + "px";
+  wrapper.style.height = tileSize + "px";
+  inner.style.width = tileSize + "px";
+  inner.style.height = tileSize + "px";
+  inner.style.lineHeight = tileSize + "px";
+  wrapper.appendChild(inner);
+
+  // Append to the top container
+  var topContainer = document.querySelector(".top-tile-container");
+  if (topContainer) {
+    topContainer.innerHTML = "";
+    topContainer.appendChild(wrapper);
+  }
+};
+
+
 HTMLActuator.prototype.extractTileColors = function () {
-    const tileColors = {};
-    const textColors = {};
-    const boxShadows = {};
-    const styleSheets = document.styleSheets;
+  var tileColors = {};
+  var textColors = {};
+  var boxShadows = {};
+  var styleSheets = document.styleSheets;
 
-    for (let i = 0; i < styleSheets.length; i++) {
-        try {
-            const rules = styleSheets[i].cssRules || styleSheets[i].rules;
+  for (var i = 0; i < styleSheets.length; i++) {
+    try {
+      var rules = styleSheets[i].cssRules || styleSheets[i].rules;
 
-            if (rules) {
-                for (let j = 0; j < rules.length; j++) {
-                    const rule = rules[j].selectorText;
+      if (rules) {
+        for (var j = 0; j < rules.length; j++) {
+          var rule = rules[j];
+          if (!rule || !rule.selectorText) continue;
+          rule = rule.selectorText;
+          if (rule && rule.startsWith(".tile.tile-")) {
+            var className = rule.replace(".", "");
+            var backgroundColor = rules[j].style.backgroundColor;
+            var textColor = rules[j].style.color; // Fetch text color
+            var boxShadow = rules[j].style.boxShadow; // Fetch box shadow
 
-                    // Check if the rule contains a tile class for tile values
-                    if (rule && rule.match(/\.tile-\d+/)) {
-                        const className = rule.replace('.', '');
-                        
-                        // Get background color, text color, and box shadow
-                        const backgroundColor = rules[j].style.backgroundColor;
-                        const textColor = rules[j].style.color; // Fetch text color
-                        const boxShadow = rules[j].style.boxShadow; // Fetch box shadow
-
-                        // Store the class and its associated styles
-                        tileColors[className] = backgroundColor;
-                        textColors[className] = textColor;
-                        boxShadows[className] = boxShadow;
-                    }
-                }
-            }
-        } catch (e) {
-            console.warn(`Could not access stylesheet: ${styleSheets[i].href}. Error: ${e}`);
-        }
-    }
-    return {tileColors, textColors, boxShadows};
+            tileColors[className] = backgroundColor;
+            textColors[className] = textColor;
+            boxShadows[className] = boxShadow;
+           }
+         }
+       }
+    } catch (e) {console.warn(`Could not access stylesheet: ${styleSheets[i].href}. Error: ${e}`)}
+  }
+  return {tileColors, textColors, boxShadows};
 };
 
 // Update to set the tileColors, textColors, and boxShadows properties
-const tileStyles = HTMLActuator.prototype.extractTileColors();
+var tileStyles = HTMLActuator.prototype.extractTileColors();
 HTMLActuator.prototype.tileColors = tileStyles.tileColors;
 HTMLActuator.prototype.textColors = tileStyles.textColors;
 HTMLActuator.prototype.boxShadows = tileStyles.boxShadows;
+HTMLActuator.prototype.rgbStringToArray = function (rgb) {return rgb.match(/\d+/g).map(Number)}
 
-console.log(HTMLActuator.prototype.tileColors);
-console.log(HTMLActuator.prototype.textColors);
-console.log(HTMLActuator.prototype.boxShadows);
-
-
-HTMLActuator.prototype.rgbStringToArray = function (rgb) {
-    return rgb.match(/\d+/g).map(Number);
-}
+console.log(tileStyles)
 
 HTMLActuator.prototype.averageColors = function (color1, color2, weight) {
-    const rgb1 = this.rgbStringToArray(color1);
-    const rgb2 = this.rgbStringToArray(color2);
+  var rgb1 = this.rgbStringToArray(color1);
+  var rgb2 = this.rgbStringToArray(color2);
 
-    return rgb1.map((value, index) => {
-        return Math.round(value * weight + rgb2[index] * (1 - weight));
-    });
+  return rgb1.map((value, index) => {
+    return Math.round(value * weight + rgb2[index] * (1 - weight));
+  });
+}
+
+HTMLActuator.prototype.averageBoxShadows = function (boxShadow1, boxShadow2, weight = 0.5) {
+  function extractFirstRgba(shadow) {
+    var rgbaMatch = shadow.match(/rgba?\((\d+), (\d+), (\d+),? ?([\d\.]+)?\)/);
+    if (rgbaMatch) return rgbaMatch.slice(1, 4).map(Number);
+    return null;
+  }
+  function getAllShadows(shadow) {
+    var shadowPattern = /([^,]+?rgba?\(\d+,\s*\d+,\s*\d+(?:,\s*[\d.]+)?\)[^,]*)/g;
+    var shadows = [];
+    var match;
+    while ((match = shadowPattern.exec(shadow)) !== null) shadows.push(match[0].trim());
+    return shadows;
+  }
+  var rgba1 = extractFirstRgba(boxShadow1);
+  var rgba2 = extractFirstRgba(boxShadow2);
+  var averagedColor = this.averageColors(`rgba(${rgba1.join(",")})`, `rgba(${rgba2.join(",")})`, weight);
+  var opacity1 = parseFloat(boxShadow1.match(/rgba?\(\d+,\s*\d+,\s*\d+,\s*([\d\.]+)/)[1]) || 0;
+  var opacity2 = parseFloat(boxShadow2.match(/rgba?\(\d+,\s*\d+,\s*\d+,\s*([\d\.]+)/)[1]) || 0;
+  var averagedOpacity = opacity1 * weight + opacity2 * (1 - weight);
+  var others = getAllShadows(boxShadow1);
+  var newShadow = `0 0 30px 10px rgba(${averagedColor.join(", ")}, ${averagedOpacity}), ` + others;
+  return newShadow;
 }
 
 
 HTMLActuator.prototype.getAverageColor = function getAverageColor(value) {
-  const colorKey = `tile.tile-${value} .tile-inner`;
+  var colorKey = `tile.tile-${value} .tile-inner`;
   // If defined, get the tile color, text color, and box shadow
-  const tileColor = this.tileColors[colorKey] || null;
-  const textColor = this.textColors[colorKey] || null;
-  const boxShadow = this.boxShadows[colorKey] || null;
+  var tileColor = this.tileColors[colorKey] || null;
+  var textColor = this.textColors[colorKey] || null;
+  var boxShadow = this.boxShadows[colorKey] || null;
 
   if (tileColor) {
     return {
@@ -184,16 +252,14 @@ HTMLActuator.prototype.getAverageColor = function getAverageColor(value) {
     };
   }
 
-  const tileValues = Object.keys(this.tileColors).map(key => parseInt(key.split('-')[1]));
-  let lowerValue = null;
-  let upperValue = null;
-
-  // Find the closest lower and upper values
-  for (const val of tileValues) {
-    if (val < value) {
-      lowerValue = val;
-    } else if (val > value && (upperValue == null || val < upperValue)) {
-      upperValue = val;
+  var tileValues = Object.keys(this.tileColors).map(key => parseFloat(key.replace(/^tile\.tile-/, "").replace(/\s.*$/, ""))).filter(val => !isNaN(val));
+  var lowerValue = null;
+  var upperValue = null;
+  for (var num of tileValues) {
+    if (num < value) {
+      if (lowerValue === null || num > lowerValue) lowerValue = num;
+    } else if (num > value) {
+      if (upperValue === null || num < upperValue) upperValue = num;
     }
   }
 
@@ -202,27 +268,32 @@ HTMLActuator.prototype.getAverageColor = function getAverageColor(value) {
     lowerValue == 0
   }
 
-  const weight = (upperValue - value) / (upperValue - lowerValue);
+  var weight = (upperValue - value) / (upperValue - lowerValue);
 
-  const lowerColorKey = `tile.tile-${lowerValue} .tile-inner`;
-  const upperColorKey = `tile.tile-${upperValue} .tile-inner`;
+  var lowerColorKey = `tile.tile-${lowerValue} .tile-inner`;
+  var upperColorKey = `tile.tile-${upperValue} .tile-inner`;
 
-  const lowerColor = this.tileColors[lowerColorKey] || "rgb(255, 0, 255)";
-  const upperColor = this.tileColors[upperColorKey] || "rgb(255, 0, 255)";
+  var lowerColor = this.tileColors[lowerColorKey] || "rgb(255, 0, 255)";
+  var upperColor = this.tileColors[upperColorKey] || "rgb(255, 0, 255)";
 
-  const averageBackgroundColor = this.averageColors(lowerColor, upperColor, weight);
+  var averageBackgroundColor = this.averageColors(lowerColor, upperColor, weight);
 
-  const lowerTextColor = this.textColors[lowerColorKey] || "rgb(0, 0, 0)";
-  const upperTextColor = this.textColors[upperColorKey] || "rgb(0, 0, 0)";
+  var lowerTextColor = this.textColors[lowerColorKey] || "rgb(0, 0, 0)";
+  var upperTextColor = this.textColors[upperColorKey] || "rgb(0, 0, 0)";
 
-  const averageTextColor = this.averageColors(lowerTextColor, upperTextColor, weight);
+  var averageTextColor = this.averageColors(lowerTextColor, upperTextColor, weight);
 
-  const lowerBoxShadow = this.boxShadows[lowerColorKey] || null
+  var lowerBoxShadow = this.boxShadows[lowerColorKey] || "0 0 0 0 rgba(0, 0, 0, 0)"
+  var upperBoxShadow = this.boxShadows[upperColorKey] || "0 0 0 0 rgba(0, 0, 0, 0)"
+
+  var averageBoxShadow = this.averageBoxShadows(lowerBoxShadow, upperBoxShadow, weight)
+
+  console.log(lowerBoxShadow, upperBoxShadow, averageBoxShadow)
 
   return {
-    backgroundColor: `rgb(${averageBackgroundColor.join(', ')})`,
-    textColor: `rgb(${averageTextColor.join(', ')})`,
-    boxShadow: lowerBoxShadow
+    backgroundColor: `rgb(${averageBackgroundColor.join(", ")})`,
+    textColor: `rgb(${averageTextColor.join(", ")})`,
+    boxShadow: averageBoxShadow
   };
 }
 
@@ -239,25 +310,43 @@ HTMLActuator.prototype.positionClass = function (position) {
   return "tile-position-" + position.x + "-" + position.y;
 };
 
+HTMLActuator.prototype.formatNumber = function (num) {
+    if (num === null || num === undefined) return "";
+    var suffixes = ["", "k", "M", "B", "T", "Q"];
+    var suffixIndex = 0;
+    
+    var isNegative = num < 0;
+    num = Math.abs(num);
+    
+    while (num >= 1000 && suffixIndex < suffixes.length - 1) {
+        num /= 1000;
+        suffixIndex++;
+    }
+    return (isNegative ? "-" : "") + num.toFixed(num % 1 === 0 ? 0 : 1) + suffixes[suffixIndex];
+}
+
+
 HTMLActuator.prototype.updateScore = function (score) {
+  format = function (number) {return this.fullNumbers ? number : this.formatNumber(number)}.bind(this);
   this.clearContainer(this.scoreContainer);
 
   var difference = score - this.score;
   this.score = score;
 
-  this.scoreContainer.textContent = this.score;
+  this.scoreContainer.textContent = format(this.score);
 
   if (difference > 0) {
     var addition = document.createElement("div");
     addition.classList.add("score-addition");
-    addition.textContent = "+" + difference;
+    addition.textContent = "+" + format(difference);
 
     this.scoreContainer.appendChild(addition);
   }
 };
 
 HTMLActuator.prototype.updateBestScore = function (bestScore) {
-  this.bestContainer.textContent = bestScore;
+  format = function (number) {return this.fullNumbers ? number : this.formatNumber(number)}.bind(this);
+  this.bestContainer.textContent = format(bestScore);
 };
 
 HTMLActuator.prototype.message = function (won) {
