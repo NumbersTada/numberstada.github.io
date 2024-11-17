@@ -553,7 +553,6 @@ GameManager.prototype.move = function (direction, actuate = true) {
       if (merges == 1) audio = this.merge1mp3;
       if (merges == 2) audio = this.merge2mp3;
       if (merges >= 3) audio = this.merge3mp3;
-      console.log(merges,audio);
       audio.currentTime = 0;
       audio.play();
     };
