@@ -12,6 +12,9 @@ function KeyboardInputManager() {
     this.eventTouchend      = "touchend";
   }
 
+  this.click1mp3 = new Audio("assets/sounds/click1.mp3");
+  this.click2mp3 = new Audio("assets/sounds/click2.mp3");
+
   this.listen();
 }
 
@@ -147,13 +150,13 @@ KeyboardInputManager.prototype.listen = function () {
 
 KeyboardInputManager.prototype.restart = function (event) {
   event.preventDefault();
-  new Audio("assets/sounds/click2.mp3").play();
+  this.click2mp3.play();
   this.emit("restart");
 };
 
 KeyboardInputManager.prototype.keepPlaying = function (event) {
   event.preventDefault();
-  new Audio("assets/sounds/click2.mp3").play();
+  this.click2mp3.play();
   this.emit("keepPlaying");
 };
 
@@ -164,31 +167,31 @@ KeyboardInputManager.prototype.undo = function (event) {
 
 KeyboardInputManager.prototype.esc = function (event) {
   event.preventDefault();
-  new Audio("assets/sounds/click1.mp3").play();
+  this.click1mp3.play();
   this.emit("esc");
 };
 
 KeyboardInputManager.prototype.closeTileValueInputBox = function (event) {
   event.preventDefault();
-  new Audio("assets/sounds/click1.mp3").play();
+  this.click1mp3.play();
   this.emit("closeTileValueInputBox");
 };
 
 KeyboardInputManager.prototype.okTileValueInputBox = function (event) {
   event.preventDefault();
-  new Audio("assets/sounds/click2.mp3").play();
+  this.click2mp3.play();
   this.emit("okTileValueInputBox");
 };
 
 KeyboardInputManager.prototype.openSettings = function (event) {
   event.preventDefault();
-  new Audio("assets/sounds/click2.mp3").play();
+  this.click2mp3.play();
   this.emit("openSettings");
 };
 
 KeyboardInputManager.prototype.closeSettings = function (event) {
   event.preventDefault();
-  new Audio("assets/sounds/click1.mp3").play();
+  this.click1mp3.play();
   this.emit("closeSettings");
 };
 

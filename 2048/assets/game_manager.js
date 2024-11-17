@@ -51,6 +51,14 @@ function GameManager(sizeX, sizeY, InputManager, Actuator, StorageManager) {
   this.setParam("width", this.sizeX);
   this.setParam("height", this.sizeY);
 
+  this.movemp3 = new Audio("assets/sounds/move.mp3");
+  this.merge1mp3 = new Audio("assets/sounds/merge1.mp3");
+  this.merge2mp3 = new Audio("assets/sounds/merge2.mp3");
+  this.merge3mp3 = new Audio("assets/sounds/merge3.mp3");
+  this.click1mp3 = new Audio("assets/sounds/click1.mp3");
+  this.click2mp3 = new Audio("assets/sounds/click2.mp3");
+
+
   this.UNMERGABLE = ["immovable", "unmergable"];
   this.IMMOVABLE = ["immovable"];
 }
@@ -540,13 +548,14 @@ GameManager.prototype.move = function (direction, actuate = true) {
       if (!this.movesAvailable()) this.over = true;
       this.moves += 1;
       this.actuate();
-      var sound = "assets/sounds/"
-      if (merges == 0) sound += "move"
-      if (merges == 1) sound += "merge1"
-      if (merges == 2) sound += "merge2"
-      if (merges >= 3) sound += "merge3"
-      sound += ".mp3"
-      new Audio(sound).play()
+      var sound = "";
+      if (merges == 0) audio = this.movemp3;
+      if (merges == 1) audio = this.merge1mp3;
+      if (merges == 2) audio = this.merge2mp3;
+      if (merges >= 3) audio = this.merge3mp3;
+      console.log(merges,audio);
+      audio.currentTime = 0;
+      audio.play();
     };
   }
   return moved;
@@ -564,9 +573,13 @@ GameManager.prototype.undo = function () {
     this.previousGrid = null;
     this.previousScore = null;
     this.actuator.continueGame(); // Clear the game won/lost message
-    new Audio("assets/sounds/click2.mp3").play();
+    this.click2mp3.currentTime = 0;
+    this.click2mp3.play();
     this.actuate();
-  } else new Audio("assets/sounds/click1.mp3").play();
+  } else {
+    this.click1mp3.currentTime = 0;
+    this.click1mp3.play();
+  }
 }
 
 // Get the vector representing the chosen direction
