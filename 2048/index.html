@@ -1,15 +1,16 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  
-  <title>2048</title>
-
-  <link href="assets/main.css" rel="stylesheet" type="text/css">
-  <link rel="shortcut icon" href="assets/favicon.ico">
-
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>2048</title>
+    <link href="assets/main.css" rel="stylesheet" type="text/css">
+    <link rel="shortcut icon" href="assets/favicon.ico">
+  </head>
+  <body>
 
   <div class="overlay" id="tile-value-input-overlay">
     <div class="dialog-box">
-      <strong><p id="tile-value-input-title">Set Tile Value</p></strong>
+      <p id="tile-value-input-title"><strong>Set Tile Value</strong></p>
       <input type="text" id="tile-value-input" placeholder="New tile value">
       <br><br>
       <div class="button-container">
@@ -31,11 +32,11 @@
         <span title="Allows right click on tiles to change their value. Disabling this setting will restart the game!">Debug mode</span>
       </div>
       <p>
-      <strong>Grid Size</strong><br>
-      <div class="button-container">
-      <input type="number" min="1" max="32" step="1" value="4" id="width-input" placeholder="Width">&nbsp;&nbsp;columns&nbsp;&nbsp;
-      <input type="number" min="1" max="32" step="1" value="4" id="height-input" placeholder="Height">&nbsp;&nbsp;rows
-      </div>
+        <strong>Grid Size</strong><br>
+        <div class="button-container">
+          <input type="number" min="1" max="32" step="1" value="4" id="width-input" placeholder="Width">&nbsp;&nbsp;columns&nbsp;&nbsp;
+          <input type="number" min="1" max="32" step="1" value="4" id="height-input" placeholder="Height">&nbsp;&nbsp;rows
+        </div>
       </p>
       <strong>Board Scale</strong><br><input type="number" min="0.7" max="2" step="0.1" value="1" id="board-scale-input" placeholder="Board Scale">
       <br><br>
@@ -86,7 +87,8 @@
     </p>
     <hr>
     <p>This is a modified version of 2048 that supports any grid size. Colors for nonexistent tiles are automatically taken from other defined tiles. If you want to make a modified 2048 game, you should use this version, as this version includes some improvements to the official 2048. Modification created by NumbersTada.</p>
-
+    <center><a href="v">More variants</a></center>
+  </div>
   <script src="assets/pako.js"></script>
   <script src="assets/keyboard_input_manager.js"></script>
   <script src="assets/html_actuator.js"></script>
@@ -96,3 +98,5 @@
   <script src="assets/files.js"></script>
   <script src="assets/game_manager.js"></script>
   <script src="assets/application.js"></script>
+  </body>
+</html>
