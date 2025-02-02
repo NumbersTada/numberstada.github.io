@@ -22,6 +22,11 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
 
     self.updateScore(metadata.score);
     self.updateBestScore(metadata.bestScore);
+    var clElement = document.getElementById("current-level");
+    clElement.className = "current-level";
+    clElement.classList.add("tile-colors-" + metadata.levelData.tile);
+    clElement.classList.add("tile-sizes-" + metadata.levelData.tile);
+    clElement.innerText = metadata.levelData.tile;
 
     if (metadata.terminated) {
       if (metadata.over) {
@@ -33,6 +38,16 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
 
   });
 };
+
+HTMLActuator.prototype.updateLevel = function (levelData) {
+  var notif = document.getElementById("leveling");
+  notif.className = "notification-container";
+  notif.classList.add("tile-colors-" + levelData.tile);
+  notif.innerHTML = "<strong>Level " + levelData.level + "</strong> unlocked!"
+  notif.classList.remove("show");
+  void notif.offsetWidth;
+  notif.classList.add("show");
+}
 
 // Continues the game (both restart and keep playing)
 HTMLActuator.prototype.continueGame = function () {
@@ -62,7 +77,7 @@ HTMLActuator.prototype.addTile = function (tile) {
   // We can't use classlist because it somehow glitches when replacing classes
   var classes = ["tile", "tile-" + tile.value, positionClass];
 
-  if (tile.value > 2048) classes.push("tile-super");
+  if (tile.value > 65536) classes.push("tile-super");
 
   this.applyClasses(wrapper, classes);
 
