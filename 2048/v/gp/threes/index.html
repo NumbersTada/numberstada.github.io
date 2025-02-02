@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Threes</title>
+    <link href="assets/main.css" rel="stylesheet" type="text/css">
+    <link rel="shortcut icon" href="assets/favicon.ico">
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="heading">
+      <h1 class="title">Threes</h1>
+      <div class="scores-container">
+        <div class="score-container"></div>
+        <div class="best-container"></div>
+      </div>
+    </div>
+
+    <div class="above-game">
+      <p class="game-intro">Join the numbers and get to the <strong>3072 tile!</strong></p>
+      <a class="restart-button">New Game</a>
+    </div>
+
+
+    <div class="game-container">
+      <div class="game-message">
+        <p></p>
+        <div class="lower">
+	        <a class="keep-playing-button">Keep going</a>
+          <a class="retry-button">Try again</a>
+        </div>
+      </div>
+
+      <div class="grid-container">
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+      </div>
+
+      <div class="tile-container"></div>
+    </div>
+
+    <p class="game-explanation">
+      <strong class="important">How to play:</strong> Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong>
+    </p>
+  </div>
+  <script src="assets/keyboard_input_manager.js"></script>
+  <script src="assets/html_actuator.js"></script>
+  <script src="assets/grid.js"></script>
+  <script src="assets/tile.js"></script>
+  <script src="assets/local_storage_manager.js"></script>
+  <script src="assets/game_manager.js"></script>
+  <script src="assets/application.js"></script>
+  </body>
+</html>
