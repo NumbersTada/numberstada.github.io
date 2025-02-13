@@ -3,6 +3,7 @@ function HTMLActuator() {
   this.scoreContainer   = document.querySelector(".score-container");
   this.bestContainer    = document.querySelector(".best-container");
   this.messageContainer = document.querySelector(".game-message");
+  this.savesContainer   = document.querySelector(".saves-message");
   this.score = 0;
 }
 
@@ -22,6 +23,7 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
 
     self.updateScore(metadata.score);
     self.updateBestScore(metadata.bestScore);
+    self.savesContainer.innerText = "The tile generator saved you " + metadata.tgSaves + " times from a game over.\nTotal value of all spawned non-2 tiles: " + metadata.tgTiles;
 
     if (metadata.terminated) {
       if (metadata.over) {

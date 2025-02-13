@@ -486,6 +486,10 @@ hr {
   line-height: 42px;
   margin-bottom: 0; }
 
+.saves-message {
+  font-size: 14px; }
+
+
 .restart-button, .auto-button {
   display: inline-block;
   background: #8f7a66;

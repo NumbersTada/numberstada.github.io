@@ -44,12 +44,16 @@ GameManager.prototype.setup = function () {
     this.over        = previousState.over;
     this.won         = previousState.won;
     this.keepPlaying = previousState.keepPlaying;
+    this.tgSaves     = previousState.tgSaves;
+    this.tgTiles     = previousState.tgTiles;
   } else {
     this.grid        = new Grid(this.size);
     this.score       = 0;
     this.over        = false;
     this.won         = false;
     this.keepPlaying = false;
+    this.tgSaves     = 0;
+    this.tgTiles     = 0;
 
     // Add the initial tiles
     this.addStartTiles();
@@ -61,6 +65,7 @@ GameManager.prototype.setup = function () {
 
 GameManager.prototype.autoMove = function () {
   this.auto = !this.auto;
+  this.actuate();
   if (this.auto) this.autoLoop();
 }
 
@@ -90,6 +95,7 @@ GameManager.prototype.addRandomTile = function () {
       iters++;
       this.grid.insertTile(new Tile(cell, val));
     }
+    return {iters: iters, value: val};
   }
 };
 
@@ -114,6 +120,8 @@ GameManager.prototype.actuate = function () {
     score:      this.score,
     over:       this.over,
     won:        this.won,
+    tgSaves:    this.tgSaves,
+    tgTiles:    this.tgTiles,
     bestScore:  this.storageManager.getBestScore(),
     terminated: this.isGameTerminated()
   });
@@ -127,7 +135,9 @@ GameManager.prototype.serialize = function () {
     score:       this.score,
     over:        this.over,
     won:         this.won,
-    keepPlaying: this.keepPlaying
+    keepPlaying: this.keepPlaying,
+    tgSaves:     this.tgSaves,
+    tgTiles:     this.tgTiles,
   };
 };
 
@@ -202,7 +212,11 @@ GameManager.prototype.move = function (direction) {
   });
 
   if (moved) {
-    this.addRandomTile();
+    var result = this.addRandomTile();
+    if (result.iters) {
+      this.tgSaves++;
+      this.tgTiles += result.value;
+    }
 
     if (!this.movesAvailable()) {
       this.over = true; // Game over!
