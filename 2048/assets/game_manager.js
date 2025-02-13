@@ -277,8 +277,8 @@ GameManager.prototype.updateGridCSS = function () {
   var tileHeight = tileWidth;
   var borderRadius = Math.floor(tileWidth / 106 * 3 * scale);
   var gameBorderRadius = Math.floor(containerSize / 500 * 6 * scale);
-  borderRadius = 3;       // This mimics the style of other modified games with different grid by keeping the same padding, comment to disable
-  gameBorderRadius = 6;
+  //borderRadius = 3;       // This mimics the style of other modified games with different grid by keeping the same padding, comment to disable
+  //gameBorderRadius = 6;
 
   var existingStyle = document.querySelector("#dynamic-grid-css");
   if (existingStyle) existingStyle.remove();
