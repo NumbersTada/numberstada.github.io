@@ -151,8 +151,10 @@ AI.prototype.search = function (grid, step) {
 AI.prototype.searchAlgorithm = function () {
   var startTime = performance.now()/1000;
   if (this.game.isGameTerminated()) return; // Don't do anything if the game's over
+  /*
   var empty = this.countEmpty(this.game.grid.cells);
   this.maxSteps = empty < 4 ? 3 : 2;
+  */
   var bestDir = this.search(this.game.grid.serialize().cells, 0);
   var moveTime = performance.now()/1000 - startTime;
   this.updateStats(moveTime);
