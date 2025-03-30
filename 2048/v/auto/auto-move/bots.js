@@ -1,15 +1,15 @@
 [
-{name: "Random Keys", author: "pluh", obj: {
+{name: "Random Keys", author: "NumbersTada", obj: {
   getBestMove: function () {
     return Math.floor(Math.random() * 4)
   }
 }},
-{name: "Random 3 Keys", author: "pluh", obj: {
+{name: "Random 3 Keys", author: "NumbersTada", obj: {
   getBestMove: function () {
     return Math.floor(Math.random() * 3)
   }
 }},
-{name: "Swirl", author: "Mangos", obj: {
+{name: "Swirl (URDL)", author: "NumbersTada", obj: {
   cycle: 0,
   getBestMove: function () {
     ++this.cycle;
