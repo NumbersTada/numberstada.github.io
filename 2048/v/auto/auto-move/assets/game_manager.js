@@ -203,7 +203,7 @@ GameManager.prototype.move = function (direction, actuate = true, simulate = fal
           self.score += merged.value;
 
         } else {
-          self.moveTile(tile, positions.farthest);Auto
+          self.moveTile(tile, positions.farthest);
         }
 
         if (!self.positionsEqual(cell, tile)) {
