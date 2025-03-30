@@ -32,8 +32,8 @@ GameManager.prototype.downloadBots = function () {
     .then(response => response.text())
     .then(data => {
       window.game.bots = eval(data); // Scary, but you can't add your own bots without verification (unless you hack my GitHub :skull:)
-      window.game.actuator.updateBotContainer();
       window.game.selectedBot = window.game.bots[0];
+      window.game.actuator.updateBotContainer();
     })
     .catch(error => alert("Error while downloading bots: " + error.toString()));
 }
