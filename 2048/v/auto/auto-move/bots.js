@@ -16,5 +16,18 @@
     this.cycle %= 4;
     return this.cycle;
   }
-}}
+}},
+{name: "Priority", author: "NumbersTada", obj: {
+  getBestMove: function () {
+    var results;
+    var move = null;
+    for (var dir = 0; dir < 4; dir++) {
+      results = window.game.move(dir, false, true);
+      if (results.moved) {
+        move = dir;
+      }
+    }
+    return move;
+  }
+}},
 ]
