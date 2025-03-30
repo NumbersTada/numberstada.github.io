@@ -68,6 +68,7 @@ AutoManager.prototype.resetStats = function () {
   this.moves = 0;
   this.totalTime = 0;
   this.avgTime = 0;
+  this.game.topTiles = {};
   this.game.storageManager.setBestScore(0);
   this.game.prepareTiles();
   this.game.actuate();
