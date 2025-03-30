@@ -23,7 +23,7 @@
     var move = null;
     for (var dir = 0; dir < 4; dir++) {
       results = window.game.move(dir, false, true);
-      if (results.moved) {
+      if (results && results.moved) {
         move = dir;
         break;
       }
