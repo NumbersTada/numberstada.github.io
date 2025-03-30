@@ -25,6 +25,7 @@
       results = window.game.move(dir, false, true);
       if (results.moved) {
         move = dir;
+        break;
       }
     }
     return move;
