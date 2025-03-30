@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>2048 Auto Move</title>
+    <link href="assets/main.css" rel="stylesheet" type="text/css">
+    <link rel="shortcut icon" href="assets/favicon.ico">
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="heading">
+      <h1 class="title">2048</h1>
+      <div class="scores-container">
+        <div class="score-container"></div>
+        <div class="best-container"></div>
+      </div>
+    </div>
+
+    <div class="above-game">
+      <a class="auto-button"></a>
+      <a class="step-button">One Step</a>
+      <a class="restart-button">New Game</a>
+    </div>
+
+    <div class="game-container">
+      <div class="game-message">
+        <p></p>
+        <div class="lower">
+          <a class="keep-playing-button">Keep going</a>
+          <a class="retry-button">Try again</a>
+        </div>
+      </div>
+
+      <div class="grid-container">
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+      </div>
+
+      <div class="tile-container"></div>
+
+      <div class="stats-sidebar">
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+          <span>Moves per second:</span>
+          <span id="perf-display-mps"></span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+          <span>Moves in last frame:</span>
+          <span id="perf-display-mpf"></span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+          <span>Last move time:</span>
+          <span id="perf-display-last"></span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+          <span>Average move time:</span>
+          <span id="perf-display-avg"></span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+          <span>Total move time:</span>
+          <span id="perf-display-total-time"></span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+          <span>Total moves:</span>
+          <span id="perf-display-moves"></span>
+        </div>
+
+        <div class="top-tile-container">
+        </div>
+
+        <br />
+        <a class="auto-restart-button">Auto Restart: OFF</a>
+        <a class="stats-reset-button">Reset</a>
+
+      </div>
+
+      <div class="autodb-sidebar">
+        <h2>AutoDB</h2>
+        <div class="bots-container">
+        </div>
+      </div>
+
+    </div>
+
+    <p class="game-explanation">
+      <strong class="important">How to play:</strong> Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong>
+      <hr />
+      Meow meow meow.
+    </p>
+
+  </div>
+
+  <script src="assets/keyboard_input_manager.js"></script>
+  <script src="assets/html_actuator.js"></script>
+  <script src="assets/grid.js"></script>
+  <script src="assets/tile.js"></script>
+  <script src="assets/local_storage_manager.js"></script>
+  <script src="assets/game_manager.js"></script>
+  <script src="assets/auto_move.js"></script>
+  <script src="assets/event_rate_tracker.js"></script>
+  <script src="assets/application.js"></script>
+  </body>
+</html>
