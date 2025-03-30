@@ -16,4 +16,5 @@
     this.cycle %= 4;
     return this.cycle;
   }
+}}
 ]
