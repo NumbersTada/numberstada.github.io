@@ -23,6 +23,24 @@ h1.title {
   display: block;
   float: left; }
 
+.codeblock {
+  font-family: monospace;
+  font-size: 14px;
+  white-space: pre;
+  color: #ffffff;
+  background: #202020;
+  border: 2px solid #808080;
+  border-radius: 5px;
+  width: 100%;
+  padding: 10px;
+}
+
+pre[class*="language-"] {
+  font-size: 0.8em !important; }
+
+.token.operator {
+    background: none !important; }
+
 @-webkit-keyframes move-up {
   0% {
     top: 25px;
