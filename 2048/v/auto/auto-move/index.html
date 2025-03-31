@@ -5,6 +5,10 @@
     <title>2048 Auto Move</title>
     <link href="assets/main.css" rel="stylesheet" type="text/css">
     <link rel="shortcut icon" href="assets/favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-twilight.min.css">
   </head>
   <body>
 
@@ -110,9 +114,36 @@
     </div>
 
     <p class="game-explanation">
-      <strong class="important">How to play:</strong> Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong>
+      <strong class="important">How to submit bots:</strong> Message numberstada on <strong>Discord</strong> and send a JS file with the bot. The bot should be an object that has these properties:
+      <ul>
+        <li><strong>name</strong>: The name of the bot.</li>
+        <li><strong>author</strong>: The author of the bot.</li>
+        <li><strong>obj</strong>: The actual bot code. This should be an object. It must have a "getBestMove" method, which returns a number that represents the direction. Access the game manager by using window.game.</li>
+      </ul>
+      Here is an example of a simple bot:
+      <pre><code class="language-js">{name: "Priority", author: "NumbersTada", obj: {
+getBestMove: function () {
+  var results;
+  var move = null;
+  for (var dir = 0; dir < 4; dir++) {
+    // Check all possible moves and pick the first one
+    // that is valid
+    results = window.game.move(dir, false, true);
+    // Second argument is whether to actuate the game
+    // (takes 1 frame), third argument is whether to simulate
+    // the game (meaning the board doesn't change).
+    if (results && results.moved) {
+      move = dir;
+      break;
+    }
+  }
+  return move;
+}
+}}
+</code></pre>
+
       <hr />
-      Meow meow meow.
+      Select a bot from AutoDB and turn on auto moving. Turn on Auto Restart to automatically restart when the game is over (useful for long simulations).
     </p>
 
   </div>
