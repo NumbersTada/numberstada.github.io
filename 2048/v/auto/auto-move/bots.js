@@ -106,7 +106,7 @@ getBestMove: function () {
   for (var dir = 0; dir < 4; dir++) {
     results = window.game.move(dir, false, true);
     if (results && results.moved) {
-      var estimation = estimate(results.afterGrid);
+      var estimation = this.estimate(results.afterGrid);
       if (estimation > max) {
         max = estimation;
         move = dir;
