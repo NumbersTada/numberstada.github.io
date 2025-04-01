@@ -85,7 +85,37 @@ getBestMove: function () {
   return this.searchAlgorithm();
 },
 }},
-
+{name: "Heuristic", author: "NumbersTada", obj: {
+estimate: function (grid) {
+  var sum = 0;
+  var penalty = 0;
+  for (var x = 0; x < window.game.grid.size; x++) {
+    for (var y = 0; y < window.game.grid.size; y++) {
+      var val = grid[x][y] ? grid[x][y].value : 0;
+      sum += val;
+      if (x < 3) penalty += Math.abs(val - (grid[x+1][y] ? grid[x+1][y].value : 0));
+      if (y < 3) penalty += Math.abs(val - (grid[x][y+1] ? grid[x][y+1].value : 0));
+    }
+  }
+  return (sum * 4 - penalty) * 2;
+},
+getBestMove: function () {
+  var results;
+  var move = null;
+  var max = -1/0;
+  for (var dir = 0; dir < 4; dir++) {
+    results = window.game.move(dir, false, true);
+    if (results && results.moved) {
+      var estimation = estimate(results.afterGrid);
+      if (estimation > max) {
+        max = estimation;
+        move = dir;
+      }
+    }
+  }
+  return move;
+}
+}},
 {name: "Random Keys", author: "NumbersTada", obj: {
 getBestMove: function () {
   return Math.floor(Math.random() * 4)
